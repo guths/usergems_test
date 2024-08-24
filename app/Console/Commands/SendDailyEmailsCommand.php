@@ -7,20 +7,20 @@ use App\Models\DailyEmail;
 use App\Models\Event;
 use App\Models\Person;
 use App\Services\CalendarApiService;
-use App\Services\PeopleService;
 use App\Services\PersonalApiService;
+use App\Services\PersonService;
 use DateTime;
 use DB;
 use Exception;
 use Illuminate\Console\Command;
 
-class SendResearchesToSalesRepresentatives extends Command
+class SendDailyEmailsCommand extends Command
 {
-    protected $signature = 'app:send-researches-to-sales-representatives';
+    protected $signature = 'app:send-daily-emails';
 
     protected CalendarApiService $calendarService;
 
-    protected PeopleService $peopleService;
+    protected PersonService $personService;
 
     /**
      * The console command description.
@@ -33,7 +33,7 @@ class SendResearchesToSalesRepresentatives extends Command
     {
         parent::__construct();
         $this->calendarService = new CalendarApiService();
-        $this->peopleService = new PeopleService(new PersonalApiService);
+        $this->personService = new PersonService(new PersonalApiService);
     }
 
     
@@ -42,21 +42,21 @@ class SendResearchesToSalesRepresentatives extends Command
      */
     public function handle()
     {
-        $salesRepresentatives = Person::query()
+        $internalPeople = Person::query()
             ->where('enabled', true)
             ->where('is_internal', true)
             ->whereNotNull('api_key')
             ->get();
 
-        foreach ($salesRepresentatives as $salesRep) {
-            DB::transaction(function () use ($salesRep) {
-                $this->syncEvents($salesRep);
+        foreach ($internalPeople as $internalPerson) {
+            DB::transaction(function () use ($internalPerson) {
+                $this->handleEvents($internalPerson);
             });
         }
     }
 
-    public function syncEvents(Person $person) {
-        $events = $this->calendarService->getEvents($person);
+    public function handleEvents(Person $person) {
+        $events = $this->getTodayEvents($person);
 
         if (empty($events)) {
             return;
@@ -101,23 +101,9 @@ class SendResearchesToSalesRepresentatives extends Command
     private function addPeopleToEvent(Event $event, array $participantEmails, string $status): void
     {
         foreach ($participantEmails as $participantEmail) {
-            $person = $this->addPersonToEvent($event, $participantEmail, $status);
-            $this->peopleService->updatePersonInfo($person);
+            $person = $this->personService->addPersonToEvent($event, $participantEmail, $status);
+            $this->personService->updatePersonInfo($person);
         }
-    }
-
-    private function addPersonToEvent(Event $event, string $personEmail, string $status): Person
-    {
-        $person = Person::firstOrCreate([
-            'email' => $personEmail,
-        ]);
-
-        $event->people()->create([
-            'person_id' => $person->id,
-            'status' => $status,
-        ]);
-
-        return $person;
     }
 
     public function buildPayloadEvent(Person $internalPerson, Event $event): array {
@@ -155,7 +141,7 @@ class SendResearchesToSalesRepresentatives extends Command
                 'avatar' => $person->avatar,
                 'linkedin_url' => $person->linkedin_url,
                 'quantity_of_meetings_before' => $this->getQuantityOfMeetingsBefore($internalPerson, $person),
-                'other_sales_reps_meetings' => $this->getInternalPeopleMeetings($internalPerson, $person),
+                'other_sales_reps_meetings' => $this->personService->getInternalPeopleMeetings($internalPerson, $person),
                 'is_rejected' => $person->pivot->status === 'rejected',
             ];
         }
@@ -166,32 +152,17 @@ class SendResearchesToSalesRepresentatives extends Command
         return $payload;
     }
 
+    public function getTodayEvents(Person $person): array {
+        $events = $this->calendarService->getEvents($person);
 
-    ##TODO: Test this
-    public function getInternalPeopleMeetings(Person $internalPerson, Person $person): array {
-        $internalPeople = Person::query()
-            ->where('is_internal', true)
-            ->where('id', '!=', $internalPerson->id)
-            ->get();
-        
-
-        $response = [];
-
-        foreach ($internalPeople as $iPerson) {
-            $meetings = $iPerson->events()->whereHas('people', function ($query) use ($person) {
-                $query->where('person_id', $person->id);
-            })->count();
-
-            $response[$iPerson->name] = $meetings;
+        if (empty($events)) {
+            return [];
         }
 
-        return $response;
-    }
+        $today = now()->format('Y-m-d');
 
-    ##TODO: Test this
-    public function getQuantityOfMeetingsBefore(Person $internalPerson, Person $person): int {
-        return $internalPerson->events()->whereHas('people', function ($query) use ($person) {
-            $query->where('person_id', $person->id);
-        })->count();
+        return array_filter($events, function ($event) use ($today) {
+            return (new DateTime($event['start']))->format('Y-m-d') === $today;
+        });
     }
 }

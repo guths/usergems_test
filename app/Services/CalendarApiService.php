@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Interfaces\CalendarInterface;
+use App\Models\Event;
 use App\Models\Person;
 use Exception;
 use Http;
@@ -15,6 +16,9 @@ class CalendarApiService implements CalendarInterface
         $events = [];
         $currentPage = 1;
 
+        $lastUpdatedEvent = Event::query()->whereHas('people', function ($query) use ($person) {
+            $query->where('people.id', $person->id);
+        })->latest('last_updated')->first();
         while (true) {
             $response = Http::withHeaders(['Authorization' => "Bearer {$person->api_token}"])
                 ->get("{$this->url}/hiring/calendar-challenge/events", [
@@ -26,6 +30,12 @@ class CalendarApiService implements CalendarInterface
             }
 
             $pageEvents = $response->json('data');
+
+            if ($lastUpdatedEvent) {
+                $pageEvents = array_filter($pageEvents, function ($event) use ($lastUpdatedEvent) {
+                    return $event['changed'] > $lastUpdatedEvent->last_updated;
+                });
+            }
 
             if (empty($pageEvents)) {
                 break;

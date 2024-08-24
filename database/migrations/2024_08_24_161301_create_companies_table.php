@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('linkedin_url')->unique();
-            $table->integer('employees')->unsigned();
+            $table->integer('employees')->unsigned()->unique();
             $table->softDeletes();
             $table->timestamps();
         });

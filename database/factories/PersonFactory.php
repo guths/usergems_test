@@ -9,15 +9,20 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PersonFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'first_name' => $this->faker->firstName,
+            'last_name' => $this->faker->lastName,
+            'email' => $this->faker->unique()->safeEmail,
+            'api_key' => $this->faker->uuid,
+            'avatar' => $this->faker->imageUrl(),
+            'title' => $this->faker->jobTitle,
+            'linkedin_url' => $this->faker->url,
+            'enabled' => true,
+            'company_id' => null,
+            'last_synced_at' => now(),
+            'is_internal' => true,
         ];
     }
 }
