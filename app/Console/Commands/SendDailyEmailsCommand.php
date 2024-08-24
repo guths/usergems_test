@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\SendEmail;
+use App\Mail\EventMail;
 use App\Models\DailyEmail;
 use App\Models\Event;
 use App\Models\Person;
@@ -35,11 +36,7 @@ class SendDailyEmailsCommand extends Command
         $this->calendarService = new CalendarApiService();
         $this->personService = new PersonService(new PersonalApiService);
     }
-
     
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $internalPeople = Person::query()
@@ -66,17 +63,22 @@ class SendDailyEmailsCommand extends Command
             $event = $this->syncEvent($e);
             $event->people()->delete();
 
+            if (empty($e['accepted']) && empty($e['rejected'])) {
+                continue;
+            }
+
             $this->addPeopleToEvent($event, $e['accepted'], 'accepted');
             $this->addPeopleToEvent($event, $e['rejected'], 'rejected');
 
-            $payload = $this->buildPayloadEvent($person, $e);
+
+            $payload = $this->buildPayloadEvent($person, $event);
             
             $dailyEmail = DailyEmail::create([
                 'person_id' => $person->id,
             ]);
 
             try {
-                SendEmail::dispatch($person, $dailyEmail, $payload)->onQueue('emails');
+                SendEmail::dispatch($person, $dailyEmail, $payload);
             } catch (Exception $e) {
                 $dailyEmail->update([
                     'status' => 'error',
@@ -85,8 +87,6 @@ class SendDailyEmailsCommand extends Command
         }
     }
 
-
-    ##TODO: Test this
     public function syncEvent(array $data): Event {
         return Event::updateOrCreate([
             'calendar_api_id' => $data['id'],
@@ -98,7 +98,7 @@ class SendDailyEmailsCommand extends Command
         ]);
     }
 
-    private function addPeopleToEvent(Event $event, array $participantEmails, string $status): void
+    public function addPeopleToEvent(Event $event, array $participantEmails, string $status): void
     {
         foreach ($participantEmails as $participantEmail) {
             $person = $this->personService->addPersonToEvent($event, $participantEmail, $status);
@@ -107,20 +107,15 @@ class SendDailyEmailsCommand extends Command
     }
 
     public function buildPayloadEvent(Person $internalPerson, Event $event): array {
-        $payload = [];
-
-        if (empty($involved)) {
-            return $payload;
-        }
-
         $payload = [
-            'start' => (new DateTime($event['start']))->format('g:ia m-d'),
-            'end' => (new DateTime($event['end']))->format('g:ia m-d'),
+            'start' => (new DateTime($event->start_at))->format('g:ia'),
+            'end' => (new DateTime($event->end_at))->format('g:ia'),
             'joining_from_usergems' => "{$internalPerson->first_name} {$internalPerson->last_name}",
         ];
 
         $companies = [];
         $people = [];
+        $internals = [];
 
         $involved = $event->people()->where('person_id', '!=', $internalPerson->id)->get();
         
@@ -133,21 +128,27 @@ class SendDailyEmailsCommand extends Command
                 ];
             }
 
-            $people[] = [
+            $p = [
                 'email' => $person->email,
                 'first_name' => $person->first_name,
                 'last_name' => $person->last_name,
                 'title' => $person->title,
                 'avatar' => $person->avatar,
                 'linkedin_url' => $person->linkedin_url,
-                'quantity_of_meetings_before' => $this->getQuantityOfMeetingsBefore($internalPerson, $person),
-                'other_sales_reps_meetings' => $this->personService->getInternalPeopleMeetings($internalPerson, $person),
+                'quantity_of_meetings_before' => $this->personService->getQuantityOfMeetingsByInternalPerson($internalPerson, $person, $event),
+                'other_sales_reps_meetings' => $this->personService->getInternalPeopleMeetings($internalPerson, $person, $event),
                 'is_rejected' => $person->pivot->status === 'rejected',
             ];
-        }
 
+            if ($person->is_internal) {
+                $internals[] = $p;
+            } else {
+                $people[] = $p;
+            }
+        }
         $payload['companies'] = $companies;
         $payload['people'] = $people;
+        $payload['internals'] = $internals;
 
         return $payload;
     }

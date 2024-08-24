@@ -44,6 +44,7 @@ class EventMail extends Mailable
                 'joining_from_usergems' => $this->payload['joining_from_usergems'],
                 'people' => $this->payload['people'],
                 'companies' => $this->payload['companies'],
+                'internals' => $this->payload['internals'],
             ]
         );
     }

@@ -1,0 +1,68 @@
+{
+  "start": "11:18pm",
+  "end": "12:18am",
+  "joining_from_usergems": "Cristina Becker",
+  "companies": {
+    "https://www.olson.com/asperiores-dolorum-repudiandae-occaecati-maxime": {
+      "name": "User Gems Internal",
+      "employees": 351,
+      "linkedin_url": "https://www.olson.com/asperiores-dolorum-repudiandae-occaecati-maxime"
+    },
+    "http://shields.net/et-fuga-aliquam-quia-enim-qui": {
+      "name": "Hodkiewicz, Hammes and Eichmann",
+      "employees": 510,
+      "linkedin_url": "http://shields.net/et-fuga-aliquam-quia-enim-qui"
+    }
+  },
+  "people": [
+    {
+      "email": "martine40@example.net",
+      "first_name": "Ashleigh",
+      "last_name": "Trantow",
+      "title": "Agricultural Science Technician",
+      "avatar": "https://via.placeholder.com/640x480.png/0066aa?text=eum",
+      "linkedin_url": "https://www.toy.com/blanditiis-in-eveniet-sint-et-illum-laborum-aliquid",
+      "quantity_of_meetings_before": 1,
+      "other_sales_reps_meetings": {
+        "Isabell Hammes": 2,
+        "Henderson Runolfsson": 2
+      },
+      "is_rejected": false
+    },
+    {
+      "email": "vwalsh@example.org",
+      "first_name": "Garland",
+      "last_name": "Willms",
+      "title": "GED Teacher",
+      "avatar": "https://via.placeholder.com/640x480.png/007711?text=veritatis",
+      "linkedin_url": "http://borer.biz/est-ut-dolor-fugit",
+      "quantity_of_meetings_before": 0,
+      "other_sales_reps_meetings": [],
+      "is_rejected": true
+    }
+  ],
+  "internals": [
+    {
+      "email": "luciano.ernser@example.com",
+      "first_name": "Isabell",
+      "last_name": "Hammes",
+      "title": "Hunter and Trapper",
+      "avatar": "https://via.placeholder.com/640x480.png/00bb88?text=veritatis",
+      "linkedin_url": "http://kulas.com/provident-a-dolores-nulla-laudantium",
+      "quantity_of_meetings_before": 1,
+      "other_sales_reps_meetings": { "Henderson Runolfsson": 2 },
+      "is_rejected": false
+    },
+    {
+      "email": "skiles.corrine@example.org",
+      "first_name": "Henderson",
+      "last_name": "Runolfsson",
+      "title": "Municipal Fire Fighter",
+      "avatar": "https://via.placeholder.com/640x480.png/00aa33?text=dolor",
+      "linkedin_url": "https://www.strosin.com/libero-numquam-occaecati-et-quia-aut-expedita-quis",
+      "quantity_of_meetings_before": 1,
+      "other_sales_reps_meetings": { "Isabell Hammes": 2 },
+      "is_rejected": false
+    }
+  ]
+}

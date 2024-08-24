@@ -10,7 +10,8 @@ class DailyEmail extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'sent_at'];
+    
+    protected $fillable = ['person_id', 'sent_at', 'status'];
 
     public function person(): BelongsTo
     {

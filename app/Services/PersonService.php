@@ -26,7 +26,7 @@ class PersonService
         }
 
         $updatedPerson = $this->personalApiService->getPersonalDataByEmail($person->email);
-
+        
         if (empty($updatedPerson)) {
             return $person;
         }
@@ -64,19 +64,23 @@ class PersonService
         return $person;
     }
 
-    public function getInternalPeopleMeetings(Person $internalPerson, Person $person): array
+    public function getInternalPeopleMeetings(Person $internalPerson, Person $person, Event $excludeEvent = null): array
     {
         $internalPeople = Person::query()
             ->where('is_internal', true)
             ->where('id', '!=', $internalPerson->id)
+            ->where('id', '!=', $person->id)
             ->get();
-
 
         $response = [];
 
         foreach ($internalPeople as $iPerson) {
-            $meetings = $iPerson->events()->whereHas('people', function ($query) use ($person) {
+            $meetings = $iPerson->events()->whereHas('people', function ($query) use ($person, $excludeEvent) {
                 $query->where('person_id', $person->id);
+
+                if ($excludeEvent) {
+                    $query->where('event_id', '!=', $excludeEvent->id);
+                }
             })->count();
 
             if ($meetings > 0) {
@@ -87,10 +91,14 @@ class PersonService
         return $response;
     }
 
-    public function getQuantityOfMeetingsByInternalPerson(Person $internalPerson, Person $person): int
+    public function getQuantityOfMeetingsByInternalPerson(Person $internalPerson, Person $person, Event $excludeEvent = null): int
     {
-        return $internalPerson->events()->whereHas('people', function ($query) use ($person) {
+        return $internalPerson->events()->whereHas('people', function ($query) use ($person, $excludeEvent) {
             $query->where('person_id', $person->id);
+
+            if ($excludeEvent) {
+                $query->where('event_id', '!=', $excludeEvent->id);
+            }
         })->count();
     }
 }

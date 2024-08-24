@@ -19,6 +19,7 @@ class CalendarApiService implements CalendarInterface
         $lastUpdatedEvent = Event::query()->whereHas('people', function ($query) use ($person) {
             $query->where('people.id', $person->id);
         })->latest('last_updated')->first();
+        
         while (true) {
             $response = Http::withHeaders(['Authorization' => "Bearer {$person->api_token}"])
                 ->get("{$this->url}/hiring/calendar-challenge/events", [

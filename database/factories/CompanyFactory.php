@@ -17,7 +17,9 @@ class CompanyFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'linkedin_url' => $this->faker->url,
+            'name' => $this->faker->company,
+            'employees' => $this->faker->numberBetween(1, 1000),
         ];
     }
 }

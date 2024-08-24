@@ -19,31 +19,24 @@ class SendEmail implements ShouldQueue
 {
     use Queueable;
 
-    protected Person $person;
-    protected DailyEmail $research;
-    protected array $payload;
-    
-    public function __construct(Person $person, DailyEmail $dailyEmail, array $payload)
+    public function __construct(private Person $person, private DailyEmail $dailyEmail, private array $payload)
     {
-        $this->person = $person;
-        $this->$dailyEmail = $dailyEmail;
-        $this->payload = $payload;
     }
 
     public function handle(): void
     {
         try {
             Mail::to($this->person->email)->send(new EventMail($this->payload));
-            $this->research->update([
+            $this->dailyEmail->update([
                 'status' => 'sent',
-                'sended_at' => now(),
+                'sent_at' => now(),
             ]);
         } catch (Exception $e) {
-            $this->research->update([
+            $this->dailyEmail->update([
                 'status' => 'error',
                 'error_message' => $e->getMessage(),
             ]);
         }
-        
+
     }
 }
