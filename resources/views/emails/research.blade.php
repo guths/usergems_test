@@ -17,7 +17,7 @@
 <hr style="border: 1px solid #e9ecef;">
 @endforeach
 
-@foreach ($internal as $person)
+@foreach ($internals as $person)
 <h3 style="margin: 10px 0; color: #333;">{{$person['first_name']}} {{$person['last_name']}}</h3>
 <p style="margin: 5px 0;">{{$person['title']}}</p>
 <hr style="border: 1px solid #e9ecef;">
